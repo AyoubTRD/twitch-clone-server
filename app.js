@@ -1,58 +1,37 @@
 const express = require("express"),
   app = express(),
-  cors = require("cors"),
-  bodyParser = require("body-parser");
+  cors = require("cors");
 
-const streams = [];
-
-const msg = action => `${action}ed stream successfully`;
+let streams = {};
 
 app.use(cors());
 app.use(express.json({ extended: false }));
 
 app.get("/streams", (req, res) => res.send(streams));
-app.get("/streams/:id", (req, res) => {
-  const {
-    params: { id }
-  } = req;
-  const stream = streams.find(stream => stream.id === id);
-  res.send(stream);
+app.get("/streams/:id", ({ params: { id } }, res) => {
+  res.send(streams[id]);
 });
 
 app.post("/streams", (req, res) => {
-  console.log(req.body);
-  streams.push(req.body);
-  res.send({
-    message: msg("creat")
-  });
-  console.log(streams);
+  const { body: stream } = req;
+  streams[stream.id] = { ...stream};
+  res.send(streams[stream.id]);
+});
+
+app.put("/streams", (req, res) => {
+  let { body: newStream } = req;
+  const id = newStream.id;
+  streams[id] = newStream;
+  res.send(streams[id]);
 });
 
 app.delete("/streams/:id", (req, res) => {
   const {
     params: { id }
   } = req;
-  console.log(streams);
-  streams.forEach((stream, i) => {
-    stream.id === id ? streams.splice(i, 1) : null;
-  });
-  console.log(streams);
-  res.send({
-    message: msg("delet")
-  });
-  console.log(streams);
-});
-
-app.put("/streams", (req, res) => {
-  const { body } = req;
-  streams.forEach((stream, i) => {
-    if (stream.id === body.id) {
-      streams[i] = body;
-    }
-  });
-  res.send({
-    message: msg("edit")
-  });
+  const deletedStream = { ...streams[id] };
+  streams = { ...streams, [id]: undefined };
+  res.send(deletedStream);
 });
 
 const port = process.env.PORT || 8080;
